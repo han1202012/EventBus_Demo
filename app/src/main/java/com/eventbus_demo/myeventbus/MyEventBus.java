@@ -132,11 +132,13 @@ public class MyEventBus {
                             threadMode,     // 线程模式
                             params[0]       // 事件参数
                     );
+                    // 加入到返回集合中
+                    subscriberMethods.add(subscriberMethod);
                 }
             }
         }
 
-        return null;
+        return subscriberMethods;
     }
 
 }
