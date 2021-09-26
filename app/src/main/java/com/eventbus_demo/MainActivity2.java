@@ -11,6 +11,9 @@ import com.eventbus_demo.publisher_subscriber.Dispatcher;
 import com.eventbus_demo.publisher_subscriber.Publisher;
 import com.eventbus_demo.publisher_subscriber.Subscriber;
 
+/**
+ * 使用发布-订阅模式
+ */
 public class MainActivity2 extends AppCompatActivity implements Subscriber {
 
     private TextView textView;

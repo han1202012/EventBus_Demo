@@ -1,19 +1,19 @@
 package com.eventbus_demo;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 /**
- * 使用 EventBus 依赖库
+ * 使用 MyEventBus 依赖库
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity3 extends AppCompatActivity {
 
     private TextView textView;
 
