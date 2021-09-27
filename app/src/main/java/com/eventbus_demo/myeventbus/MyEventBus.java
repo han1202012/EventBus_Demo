@@ -60,14 +60,68 @@ public class MyEventBus {
      * @param subscriber
      */
     public void register(Object subscriber) {
-        // 获取订阅者所述类
+        // 获取订阅者所属类
         Class<?> clazz = subscriber.getClass();
         // 查找订阅方法
         List<MySubscriberMethod> subscriberMethods = findSubscriberMethods(clazz);
 
         // 遍历所有订阅方法 , 进行订阅
+        //      首先确保查找到的订阅方法不为空 , 并且个数大于等于 1 个
+        if (subscriberMethods != null && !subscriberMethods.isEmpty()) {
+            for (MySubscriberMethod method : subscriberMethods) {
+                // 正式进行订阅
+                subscribe(subscriber, method);
+            }
+        }
+    }
 
+    /**
+     * 方法订阅
+     *      将 订阅方法参数类型 和 订阅类 + 订阅方法 封装类 , 保存到
+     *      Map<Class<?>, CopyOnWriteArrayList<MySubscription>> subscriptionsByEventType 集合中
+     *          Key - 订阅者方法事件参数类型
+     *          Value - 封装 订阅者对象 与 订阅方法 的 MySubscription 集合
+     *
+     * 取消注册数据准备
+     *      取消注册数据存放在 Map<Object, List<Class<?>>> typesBySubscriber 集合中
+     *          Key - 订阅者对象
+     *          Value - 订阅者方法参数集合
+     *
+     * @param subscriber    订阅者对象
+     * @param subscriberMethod        订阅方法
+     */
+    private void subscribe(Object subscriber, MySubscriberMethod subscriberMethod) {
+        // 获取订阅方法接收的参数类型
+        Class<?> eventType = subscriberMethod.getEventType();
+        // 获取 eventType 参数类型对应的 订阅者封装类 ( 封装 订阅者对象 + 订阅方法 ) 集合
+        CopyOnWriteArrayList<MySubscription> subscriptions =
+                subscriptionsByEventType.get(eventType);
 
+        // 如果获取的集合为空 , 说明 eventType 参数对应的订阅方法一个也没有注册过
+        //      这里先创建一个集合 , 放到 subscriptionsByEventType 键值对中
+        if (subscriptions == null) {
+            // 创建集合
+            subscriptions = new CopyOnWriteArrayList<>();
+            // 将集合设置到 subscriptionsByEventType 键值对集合中
+            subscriptionsByEventType.put(eventType, subscriptions);
+        }
+
+        // 封装 订阅者对象 + 订阅方法 对象
+        MySubscription subscription = new MySubscription(subscriber, subscriberMethod);
+        // 将创建的 订阅者对象 + 订阅方法 对象 添加到  CopyOnWriteArrayList 集合中
+        subscriptions.add(subscription);
+
+        // 为取消注册准备数据
+        //      设置 Map<Object, List<Class<?>>> typesBySubscriber
+        List<Class<?>> eventTypes = typesBySubscriber.get(subscriber);
+        if (eventTypes == null) {
+            // 创建新的集合, 用于存放订阅方法的参数类型
+            eventTypes = new ArrayList<>();
+            // 将新的集合设置到 Map<Object, List<Class<?>>> typesBySubscriber 集合中
+            typesBySubscriber.put(subscriber, eventTypes);
+        }
+        // 将新的 订阅方法类型 放入到集合中
+        eventTypes.add(eventType);
     }
 
     /**
