@@ -12,8 +12,8 @@ public class MyEventBus {
 
     /**
      * 方法缓存
-     *      Key - 订阅方法事件参数类型
-     *      Value - 订阅者对象 + 订阅方法 封装类 MySubscriberMethod 的集合
+     *      Key - 订阅类类型
+     *      Value - 订阅方法 MySubscriberMethod 的集合
      * 取名与 EventBus 一致
      */
     private static final Map<Class<?>, List<MySubscriberMethod>> METHOD_CACHE = new HashMap<>();
@@ -65,7 +65,7 @@ public class MyEventBus {
         // 查找订阅方法
         List<MySubscriberMethod> subscriberMethods = findSubscriberMethods(clazz);
 
-        //
+        // 遍历所有订阅方法 , 进行订阅
 
 
     }
@@ -79,7 +79,7 @@ public class MyEventBus {
         // 获取 Class<?> clazz 参数类型对应的 订阅者封装类
         List<MySubscriberMethod> subscriberMethods = METHOD_CACHE.get(subscriberClass);
 
-
+        // 此处后期重构, 减少缩进
 
         if (subscriberMethods == null) {
             // 说明是首次获取 , 初始化 METHOD_CACHE 缓存
@@ -87,10 +87,8 @@ public class MyEventBus {
             subscriberMethods = findByReflection(subscriberClass);
 
             if (! subscriberMethods.isEmpty()) {
-                //METHOD_CACHE.put(subscriberClass, subscriberMethods);
+                METHOD_CACHE.put(subscriberClass, subscriberMethods);
             }
-
-            
         } else {
             // 如果当前不是第一次获取, 则直接返回从 METHOD_CACHE 缓存中获取的 订阅者封装类 集合
             return subscriberMethods;
@@ -137,7 +135,6 @@ public class MyEventBus {
                 }
             }
         }
-
         return subscriberMethods;
     }
 
