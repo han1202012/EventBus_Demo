@@ -1,5 +1,9 @@
 package com.eventbus_demo.myeventbus;
 
+import android.os.Handler;
+import android.os.Looper;
+
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -7,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MyEventBus {
 
@@ -41,12 +47,18 @@ public class MyEventBus {
     private final Map<Class<?>, CopyOnWriteArrayList<MySubscription>> subscriptionsByEventType;
 
     /**
+     * 线程池
+     */
+    private final ExecutorService executorService;
+
+    /**
      * 全局单例
      */
     private static MyEventBus instance;
     private MyEventBus() {
         subscriptionsByEventType = new HashMap<>();
         typesBySubscriber = new HashMap<>();
+        executorService = Executors.newCachedThreadPool();
     }
     public static MyEventBus getInstance() {
         if (instance == null) {
@@ -190,6 +202,112 @@ public class MyEventBus {
             }
         }
         return subscriberMethods;
+    }
+
+    /**
+     * 接收到了 发布者 Publisher 发送给本消息中心 的 Event 消息事件对象
+     *      将该事件对象转发给相应接收该类型消息的 订阅者 ( 订阅对象 + 订阅方法 )
+     *      通过事件类型到
+     *      Map<Class<?>, CopyOnWriteArrayList<MySubscription>> subscriptionsByEventType
+     *      集合中查找相应的 订阅对象 + 订阅方法
+     * @param event
+     */
+    public void post(Object event) {
+        // 获取事件类型
+        Class<?> eventType = event.getClass();
+        // 获取事件类型对应的 订阅者 集合
+        CopyOnWriteArrayList<MySubscription> subscriptions =
+                subscriptionsByEventType.get(eventType);
+
+        // 确保订阅者大于等于 1 个
+        if (subscriptions != null && subscriptions.size() > 0) {
+            // 遍历订阅者并调用订阅方法
+            for (MySubscription subscription : subscriptions) {
+                postSingleSubscription(subscription, event);
+            }
+        }
+    }
+
+    /**
+     * 调用订阅方法
+     * @param subscription
+     * @param event
+     */
+    private void postSingleSubscription(MySubscription subscription, Object event) {
+        // 判断当前线程是否是主线程
+        //      获取 mainLooper 与 myLooper 进行比较 , 如果一致 , 说明该线程是主线程
+        boolean isMainThread = false;
+        // 下面的情况下 , 线程是主线程
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            isMainThread = true;
+        }
+
+        // 判断订阅方法的线程模式
+        MyThreadMode threadMode = subscription.getSubscriberMethod().getThreadMode();
+
+        switch (threadMode) {
+            case POSTING:
+                // 直接在发布线程调用订阅方法
+                invokeMethod(subscription, event);
+                break;
+            case MAIN:
+            case MAIN_ORDERED:
+                // 如果发布线程是主线程, 直接调用
+                if (isMainThread) {
+                    invokeMethod(subscription, event);
+                } else {
+                    // 将订阅方法放到主线程执行
+                    // 获取主线程 Looper , 并通过 Looper 创建 Handler
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    // 在主线程中执行订阅方法
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            invokeMethod(subscription, event);
+                        }
+                    });
+                }
+                break;
+            case BACKGROUND:
+            case ASYNC:
+                // 如果是主线程 , 切换到子线程执行
+                if (isMainThread) {
+                    // 在线程池中执行方法
+                    executorService.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            invokeMethod(subscription, event);
+                        }
+                    });
+                } else {
+                    // 如果是子线程直接执行
+                    invokeMethod(subscription, event);
+                }
+                break;
+        }
+
+
+
+
+    }
+
+    /**
+     * 调用订阅者的订阅方法
+     * @param subscription 订阅者对象 + 订阅方法
+     * @param event 发布者传递的消息事件
+     */
+    private void invokeMethod(MySubscription subscription, Object event) {
+        try {
+            // 通过反射调用订阅方法
+            subscription.getSubscriberMethod().getMethod().invoke(
+                    subscription.getSubscriber(),   // 订阅者对象
+                    event                           // 事件参数类型
+            );
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 
 }
