@@ -36,10 +36,10 @@ public class MainActivity3 extends AppCompatActivity {
     }
 
     /**
-     * 使用 @Subscribe 注解修饰处理消息的方法
+     * 使用 @MySubscribe 注解修饰处理消息的方法
      *      该方法必须是 public void 修饰的
      *      只有一个参数 , 参数类型随意
-     *      调用 EventBus.getDefault().post 即可发送消息到该方法进行处理
+     *      调用 MyEventBus.getInstance().post 即可发送消息到该方法进行处理
      * @param msg
      */
     @MySubscribe
@@ -55,5 +55,3 @@ public class MainActivity3 extends AppCompatActivity {
         MyEventBus.getInstance().unregister(this);
     }
 }
-
-
