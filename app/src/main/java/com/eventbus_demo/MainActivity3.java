@@ -54,16 +54,6 @@ public class MainActivity3 extends AppCompatActivity {
         // 取消注册
         MyEventBus.getInstance().unregister(this);
     }
-    /**
-     * 注册给定订阅服务器以接收事件。订阅者一旦对接收事件不再感兴趣，就必须调用{@link#unregister（Object）}。
-     * <p/>
-     * 订阅服务器具有必须由{@link Subscribe}注释的事件处理方法。
-     * {@link Subscribe}注释还允许类似{@link ThreadMode}和优先级的配置。
-     */
-
-
-
-
 }
 
 
