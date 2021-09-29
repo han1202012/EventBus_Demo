@@ -6,6 +6,9 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.eventbus_demo.myeventbus.MyEventBus;
+import com.eventbus_demo.myeventbus.MySubscribe;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -25,13 +28,11 @@ public class MainActivity3 extends AppCompatActivity {
         textView = findViewById(R.id.textView);
         // 设置点击事件, 点击后发送消息
         textView.setOnClickListener((View view)->{
-            EventBus.getDefault().post("Hello EventBus !");
+            MyEventBus.getInstance().post("Hello EventBus !");
         });
 
         // 首先注册订阅 EventBus
-        EventBus.getDefault().register(this);
-
-
+        MyEventBus.getInstance().register(this);
     }
 
     /**
@@ -41,7 +42,7 @@ public class MainActivity3 extends AppCompatActivity {
      *      调用 EventBus.getDefault().post 即可发送消息到该方法进行处理
      * @param msg
      */
-    @Subscribe
+    @MySubscribe
     public void onMessgeEvent(String msg){
         textView.setText(msg);
     }
@@ -51,7 +52,7 @@ public class MainActivity3 extends AppCompatActivity {
         super.onDestroy();
 
         // 取消注册
-        EventBus.getDefault().unregister(this);
+        MyEventBus.getInstance().unregister(this);
     }
     /**
      * 注册给定订阅服务器以接收事件。订阅者一旦对接收事件不再感兴趣，就必须调用{@link#unregister（Object）}。

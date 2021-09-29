@@ -161,7 +161,7 @@ public class MyEventBus {
         }
 
         // 该分支走不到
-        return null;
+        return subscriberMethods;
     }
 
     /**
@@ -306,4 +306,53 @@ public class MyEventBus {
         }
     }
 
+    /**
+     * 取消注册
+     *      从 Map<Object, List<Class<?>>> typesBySubscriber 集合中获取
+     *      订阅者对象 中的 订阅方法 参数集合
+     *
+     *      然后再到
+     *      Map<Class<?>, CopyOnWriteArrayList<MySubscription>> subscriptionsByEventType
+     *      集合中获取 订阅方法参数类型 对应的 CopyOnWriteArrayList<MySubscription>> 集合
+     *      MySubscription 中封装了 订阅者对象 + 订阅方法
+     * @param subscriber
+     */
+    public void unregister(Object subscriber) {
+        // 首先获取 订阅者 对象中的订阅方法的参数集合
+        List<Class<?>> types = typesBySubscriber.get(subscriber);
+
+        // 遍历参数类型
+        for (Class<?> type: types) {
+            // 获取 接收 type 事件类型的 订阅者集合
+            //      MySubscription 中封装了订阅者对象 + 订阅方法
+            CopyOnWriteArrayList<MySubscription> subscriptions =
+                    subscriptionsByEventType.get(type);
+
+            // 判定 CopyOnWriteArrayList<MySubscription> 集合中的 MySubscription 元素
+            //      如果如果 封装类对象 中的 订阅者对象 与 本次取消注册的订阅者对象相同 , 则从集合中移除该订阅者
+
+            // 记录集合大小
+            int subscriptionsSize = subscriptions.size();
+            for (int i = 0; i < subscriptionsSize; i++) {
+                // 获取 订阅者对象 + 订阅方法 封装类 对象
+                MySubscription subscription = subscriptions.get(i);
+
+                // 如果 封装类对象 中的 订阅者对象 与 本次取消注册的订阅者对象相同
+                //      将其从该集合中删除
+                if (subscription.getSubscriber() == subscriber) {
+                    // 删除 i 索引元素
+                    subscriptions.remove(i);
+                    // 应用新的集合大小 , 集合少了一个元素
+                    subscriptionsSize--;
+                    // 第 i 个元素被删除了 , 之后会自增遍历下一个元素
+                    //      下一次遍历的还是第 i 个元素
+                    //      由于后面循环操作需要自增 , 想要之后仍然遍历第 i 个元素 ,
+                    //      这里对 i 进行自减操作
+                    i--;
+
+                }
+            }
+            // 删除了订阅者 , 就完成了取消注册操作
+        }
+    }
 }
